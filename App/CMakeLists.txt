@@ -8,7 +8,10 @@ target_sources(App PUBLIC
     "PhysicsScene.cpp"
     "RigidBody.cpp"
 	"Circle.cpp"
+	"AABB.cpp"
     "PhysicsObject.cpp"
+	"CollisionInfo.cpp"
+	"Shape.cpp"
     "Plane.cpp"
 )
 

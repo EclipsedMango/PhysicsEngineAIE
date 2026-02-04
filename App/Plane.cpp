@@ -2,30 +2,17 @@
 
 #include "LineRenderer.h"
 
-Plane::Plane() : PhysicsObject(ShapeType::PLANE) {
-	m_distanceToOrigin = 0;
-	m_normal = { 0, 1 };
+Plane::Plane(const Vec2 normal, const float distance, const Colour colour) {
+    m_normal = normal.GetNormalised();
+    m_distance = distance;
+    m_colour = colour;
+    set_position(m_normal * m_distance);
 }
 
-Plane::Plane(const Vec2 normal, const float distance) : PhysicsObject(ShapeType::PLANE), m_normal(normal), m_distanceToOrigin(distance) {
-	m_normal.Normalise();
-}
+void Plane::debug_draw(LineRenderer *lines) const {
+    const Vec2 center = m_normal * m_distance;
+    const Vec2 tangent = m_normal.GetRotatedBy90();
 
-void Plane::fixed_update(Vec2 gravity, float timeStep) {
-
-}
-
-void Plane::draw(LineRenderer *lines) {
-	const Vec2 PlaneCenter = m_distanceToOrigin * m_normal;
-
-	const Vec2 dir1 = m_normal.GetRotatedBy90();
-	const Vec2 dir2 = m_normal.GetRotatedBy270();
-
-	lines->DrawLineSegment(PlaneCenter, PlaneCenter + 25 * dir1);
-	lines->DrawLineSegment(PlaneCenter, PlaneCenter + 25 * dir2);
-	lines->DrawLineWithArrow(PlaneCenter, PlaneCenter + m_normal * 2);
-}
-
-void Plane::reset_position() {
-	m_distanceToOrigin = 0;
+    lines->DrawLineSegment(center - tangent * 50.0f, center + tangent * 50.0f);
+    lines->DrawLineWithArrow(center, center + m_normal * 10.0f);
 }

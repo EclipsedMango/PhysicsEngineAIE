@@ -27,18 +27,6 @@ public:
 
 	void OnLeftClick() override;
 
-	typedef CollisionInfo (*CollisionFunction)(PhysicsObject*, PhysicsObject*);
-    //index = (A->m_ShapeID * N) + B
-	CollisionFunction CollisionFunctions[9] = {Plane2Plane, Plane2Sphere, nullptr, Sphere2Plane, Sphere2Sphere, nullptr, nullptr, nullptr, nullptr};
-
-    static CollisionInfo Sphere2Sphere(PhysicsObject* A, PhysicsObject* B);
-    static CollisionInfo Plane2Sphere(PhysicsObject* A, PhysicsObject* B);
-    static CollisionInfo Sphere2Plane(PhysicsObject* A, PhysicsObject* B);
-    static CollisionInfo Plane2Plane(PhysicsObject* A, PhysicsObject* B);
-   
-    // NOTE: Only supports linear collisions for now.
-    void ResolveCollisions(PhysicsObject* A, PhysicsObject* B, CollisionInfo& info);
-
 private:
 	Vec2 m_gravity;
 	float m_time_step;

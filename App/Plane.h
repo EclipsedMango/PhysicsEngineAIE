@@ -1,30 +1,25 @@
 #pragma once 
+#include "Colour.h"
 #include "PhysicsObject.h"
 #include "Maths.h"
+#include "Shape.h"
 
-class Plane : public PhysicsObject {
+class Plane : public Shape {
 public:
-	Plane();
-	Plane(Vec2 normal, float distance);
+	Plane(Vec2 normal, float distance, Colour colour);
+	~Plane() override = default;
 
-	void fixed_update(Vec2 gravity, float timeStep) override;
+	void debug_draw(LineRenderer* lines) const override;
 
-	void draw(LineRenderer* lines) override;
+	[[nodiscard]] Colour get_colour() const { return m_colour; }
+	[[nodiscard]] ShapeType get_type() const override { return PLANE; }
 
-	void set_position(const Vec2 position) override {}
-	[[nodiscard]] Vec2 get_position() override { return {0,0}; }
-
-	void set_velocity(const Vec2 velocity) override {}
-	[[nodiscard]] Vec2 get_velocity() override {return {0.0f, 0.0f};}
-
-    [[nodiscard]] float get_inverse_mass() override { return 0.0f; }
 	[[nodiscard]] Vec2 get_normal() const { return m_normal; }
-	[[nodiscard]] float get_distance() const { return m_distanceToOrigin; }
+	[[nodiscard]] float get_distance() const { return m_distance; }
 
-	void reset_position() override;
 protected:
 	Vec2 m_normal;
-	float m_distanceToOrigin;
-	
+	float m_distance;
+	Colour m_colour;
 };
 
