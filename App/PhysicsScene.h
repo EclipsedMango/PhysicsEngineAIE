@@ -1,14 +1,14 @@
 #pragma once
 
 #include "Application.h"
-#include "Colour.h"
-#include "Maths.h"
 #include "PhysicsObject.h"
 #include "TextStream.h"
 #include <vector>
 
-class PhysicsObject;
-struct CollisionInfo;
+class PhysicsShape;
+class Shape;
+class RigidBody;
+class CollisionInfo;
 
 class PhysicsScene : public Application {
 public:
@@ -20,15 +20,22 @@ public:
 	void Initialise() override;
 	void Update(float delta) override;
 
-	void add_actor(PhysicsObject* actor);
-	void remove_actor(PhysicsObject* actor);
+	void add_actor(PhysicsShape* actor);
+	void remove_actor(PhysicsShape* actor);
 
 	void set_gravity(const Vec2 gravity) { m_gravity = gravity; };
 
 	void OnLeftClick() override;
+	void OnRightClick() override;
+
+	void resolve_collision(const CollisionInfo& info) const;
+	static void resolve_penetration(RigidBody* body_a, RigidBody* body_b, const Vec2& normal, float depth);
+	static void resolve_impulse(RigidBody* body_a, RigidBody* body_b, const Vec2& normal);
+
+	PhysicsShape* find_actor_from_shape(const Shape* shape) const;
 
 private:
 	Vec2 m_gravity;
 	float m_time_step;
-	std::vector<PhysicsObject*> m_actors;
+	std::vector<PhysicsShape*> m_actors;
 };

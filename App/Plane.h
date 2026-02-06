@@ -11,7 +11,7 @@ public:
 
 	void debug_draw(LineRenderer* lines) const override;
 
-	[[nodiscard]] Colour get_colour() const { return m_colour; }
+	[[nodiscard]] Colour get_colour() const override { return m_colour; }
 	[[nodiscard]] ShapeType get_type() const override { return PLANE; }
 
 	[[nodiscard]] Vec2 get_normal() const { return m_normal; }

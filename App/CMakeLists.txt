@@ -12,6 +12,7 @@ target_sources(App PUBLIC
     "PhysicsObject.cpp"
 	"CollisionInfo.cpp"
 	"Shape.cpp"
+	"PhysicsShape.cpp"
     "Plane.cpp"
 )
 

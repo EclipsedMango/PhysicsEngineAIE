@@ -1,14 +1,13 @@
 #include "PhysicsScene.h"
+
+#include <algorithm>
+
 #include "Vec2.h"
 #include "imgui.h"
-#include <algorithm>
 #include "PhysicsObject.h"
-#include "Circle.h"
-#include <iterator>
 
-#include "AABB.h"
 #include "CollisionInfo.h"
-#include "LineRenderer.h"
+#include "PhysicsShape.h"
 
 PhysicsScene::PhysicsScene() : m_gravity(Vec2(0, 0)), m_time_step(0.01f) {
 	appInfo.appName = "Example Program";
@@ -21,77 +20,152 @@ PhysicsScene::~PhysicsScene() {
 
 // happens after opengl init
 void PhysicsScene::Initialise() {
-    // set_gravity(Vec2(0, -9.81f));
+    set_gravity(Vec2(0, -9.81f));
+
+    // PhysicsShape* floor = new PhysicsShape(new Plane(Vec2(0.0f, 1.0f), 100, Colour::WHITE));
+
+    PhysicsShape* shape = new PhysicsShape(new Circle(cursorPos, 0.8f, Colour::WHITE), new RigidBody(cursorPos, Vec2(0.25f, 8.0f), 1.0f, 1.0f));
+    m_actors.push_back(shape);
 }
 
 void PhysicsScene::Update(const float delta) {
 	ImGui::Begin("Window");
 	ImGui::End();
 
-	// static float accumulated_time = 0.0f;
- //    accumulated_time += delta;
- //
- //    while (accumulated_time >= m_time_step) {
- //        for (const auto actor : m_actors) {
- //            actor->fixed_update(m_gravity, m_time_step);
- //        }
- //
- //        accumulated_time -= m_time_step;
- //
- //        // collision checks
- //        for (int outer = 0; outer < m_actors.size() - 1; outer++) {
- //            for (int inner = outer + 1; inner < m_actors.size(); inner++) {
- //
- //            }
- //        }
- //    }
- //
- //    for (const auto actor : m_actors) {
- //        actor->draw(lines);
- //    }
+	static float accumulated_time = 0.0f;
+    accumulated_time += delta;
 
-    AABB test_box(cursorPos, 1.5f, 0.9f, Colour::WHITE);
-    test_box.debug_draw(lines);
+    while (accumulated_time >= m_time_step) {
+        for (const auto actor : m_actors) {
+            actor->get_rigid_body()->fixed_update(m_gravity, m_time_step);
+            actor->get_shape()->set_position(actor->get_rigid_body()->get_position());
+        }
 
-    AABB other_box(Vec2(2.1f, 3.0f), 1.0f, 0.5f, Colour::WHITE);
-    other_box.debug_draw(lines);
+        accumulated_time -= m_time_step;
 
-    // Circle test_circle(Vec2(cursorPos), 0.8f, Colour::WHITE);
-    // Circle other_circle(Vec2(-1.9f, 0.4f), 0.65f, Colour::WHITE);
-    //
-    // test_circle.debug_draw(lines);
-    // other_circle.debug_draw(lines);
+        // collision checks
+        for (int outer = 0; outer < m_actors.size() - 1; outer++) {
+            for (int inner = outer + 1; inner < m_actors.size(); inner++) {
+                CollisionInfo info = CollisionInfo::check_shape_against_shape(m_actors[outer]->get_shape(), m_actors[inner]->get_shape());
 
-    // CollisionInfo overlap = CollisionInfo::check_shape_against_shape(&test_circle, &other_circle);
-    // overlap.debug_draw(lines);
+                if (info.is_collision()) {
+                    resolve_collision(info);
+                }
+            }
+        }
+    }
 
-    CollisionInfo overlap2 = CollisionInfo::check_shape_against_shape(&other_box, &test_box);
-    if (overlap2.is_collision()) {
-        AABB disp_box = test_box;
-        disp_box.set_position(disp_box.get_position() + overlap2.normal * overlap2.depth);
-        disp_box.set_colour(Colour::GREY);
-        disp_box.debug_draw(lines);
+    for (const auto actor : m_actors) {
+        actor->get_shape()->debug_draw(lines);
     }
 }
 
-void PhysicsScene::add_actor(PhysicsObject* actor) {
-	// m_actors.push_back(actor);
+void PhysicsScene::add_actor(PhysicsShape* actor) {
+	m_actors.push_back(actor);
 }
 
-void PhysicsScene::remove_actor(PhysicsObject* actor) {
-    // const auto iterator = std::remove_if(m_actors.begin(), m_actors.end(), [actor](const PhysicsObject* a){
-    //         if (a == actor) {
-    //             delete a;
-    //             return true;
-    //         }
-    //
-    //         return false;
-    // });
-    //
-    // m_actors.erase(iterator, m_actors.end());
+void PhysicsScene::remove_actor(PhysicsShape* actor) {
+    const auto iterator = std::remove_if(m_actors.begin(), m_actors.end(), [actor](const PhysicsShape* a){
+            if (a == actor) {
+                delete a;
+                return true;
+            }
+
+            return false;
+    });
+
+    m_actors.erase(iterator, m_actors.end());
 }
 
 void PhysicsScene::OnLeftClick() {
-    // add_actor(new Circle(cursorPos, {0.0f, 0.0f}, 20.0f, 1.0f, Colour::BLUE));
+    add_actor(new PhysicsShape(new Circle(cursorPos, 0.8f, Colour::WHITE), new RigidBody(cursorPos, Vec2(0.25f, 8.0f), 1.0f, 1.0f)));
 }
 
+void PhysicsScene::OnRightClick() {
+    add_actor(new PhysicsShape(new AABB(cursorPos, 0.75f, 0.5f, Colour::WHITE), new RigidBody(cursorPos, Vec2(0.25f, 8.0f), 1.0f, 1.0f)));
+}
+
+void PhysicsScene::resolve_collision(const CollisionInfo& info) const {
+    if (!info.is_collision()) {
+        return;
+    }
+
+    const PhysicsShape* actor_a = find_actor_from_shape(info.m_shape_a);
+    const PhysicsShape* actor_b = find_actor_from_shape(info.m_shape_b);
+
+    RigidBody* body_a = actor_a ? actor_a->get_rigid_body() : nullptr;
+    RigidBody* body_b = actor_b ? actor_b->get_rigid_body() : nullptr;
+
+    resolve_penetration(body_a, body_b, info.m_normal, info.m_depth);
+    resolve_impulse(body_a, body_b, info.m_normal);
+
+    if (actor_a) actor_a->get_shape()->set_position(body_a->get_position());
+    if (actor_b) actor_b->get_shape()->set_position(body_b->get_position());
+}
+
+void PhysicsScene::resolve_penetration(RigidBody* body_a, RigidBody* body_b, const Vec2& normal, const float depth) {
+    if (!body_a && !body_b) return;
+
+    const float inv_mass_a = body_a ? body_a->get_inverse_mass() : 0.0f;
+    const float inv_mass_b = body_b ? body_b->get_inverse_mass() : 0.0f;
+    const float total_inv_mass = inv_mass_a + inv_mass_b;
+
+    if (total_inv_mass <= 0) {
+        return;
+    }
+
+    if (body_a) {
+        const float move_per = inv_mass_a / total_inv_mass;
+        body_a->set_position(body_a->get_position() - normal * depth * move_per);
+    }
+
+    if (body_b) {
+        const float move_per = inv_mass_b / total_inv_mass;
+        body_b->set_position(body_b->get_position() + normal * depth * move_per);
+    }
+}
+
+void PhysicsScene::resolve_impulse(RigidBody* body_a, RigidBody* body_b, const Vec2& normal) {
+    if (!body_a && !body_b) {
+        return;
+    }
+
+    const Vec2 vel_a = body_a ? body_a->get_velocity() : Vec2{0, 0};
+    const Vec2 vel_b = body_b ? body_b->get_velocity() : Vec2{0, 0};
+
+    const Vec2 relative_velocity = vel_b - vel_a;
+    const float vel_along_normal = Dot(relative_velocity, normal);
+
+    if (vel_along_normal > 0.0f) {
+        return;
+    }
+
+    constexpr float restitution = 0.2f;
+
+    const float inv_mass_a = body_a ? body_a->get_inverse_mass() : 0.0f;
+    const float inv_mass_b = body_b ? body_b->get_inverse_mass() : 0.0f;
+
+    float j = -(1.0f + restitution) * vel_along_normal;
+    j /= inv_mass_a + inv_mass_b;
+
+    const Vec2 impulse = normal * j;
+
+    if (body_a) {
+        body_a->apply_impulse(-impulse);
+    }
+
+    if (body_b) {
+        body_b->apply_impulse( impulse);
+    }
+}
+
+// O(n) lookup ideally replace with hashmap or something fast
+PhysicsShape* PhysicsScene::find_actor_from_shape(const Shape* shape) const {
+    for (PhysicsShape* actor : m_actors) {
+        if (actor->get_shape() == shape) {
+            return actor;
+        }
+    }
+
+    return nullptr;
+}

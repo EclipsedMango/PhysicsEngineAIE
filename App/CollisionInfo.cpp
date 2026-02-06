@@ -1,17 +1,11 @@
 
-#include "CollisionInfo.h"
-
 #include <algorithm>
 
-#include "Key.h"
+#include "CollisionInfo.h"
 #include "LineRenderer.h"
 
-void CollisionInfo::resolve_collision(Shape* shape_a, Shape* shape_b) {
-
-}
-
 void CollisionInfo::debug_draw(LineRenderer *lines) const {
-    lines->DrawLineWithArrow(shape_a->get_position(), shape_b->get_position() + normal * depth, is_collision() ? Colour::RED : Colour::BLUE);
+    lines->DrawLineWithArrow(m_shape_b->get_position(), m_shape_b->get_position() + m_normal, Colour::GREEN);
 }
 
 CollisionFn collision_table[SHAPE_COUNT][SHAPE_COUNT] = {
@@ -44,15 +38,15 @@ CollisionInfo CollisionInfo::plane_vs_aabb(Shape *shape_a, Shape *shape_b) {
 
 CollisionInfo CollisionInfo::circle_vs_plane(Shape *shape_a, Shape *shape_b) {
     CollisionInfo info = check_plane_against_circle(dynamic_cast<Plane*>(shape_b), dynamic_cast<Circle*>(shape_a));
-    info.normal = -info.normal;
-    std::swap(info.shape_a, info.shape_b);
+    info.m_normal = -info.m_normal;
+    std::swap(info.m_shape_a, info.m_shape_b);
     return info;
 }
 
 CollisionInfo CollisionInfo::aabb_vs_plane(Shape *shape_a, Shape *shape_b) {
     CollisionInfo info = check_plane_against_aabb(dynamic_cast<Plane*>(shape_b), dynamic_cast<AABB*>(shape_a));
-    info.normal = -info.normal;
-    std::swap(info.shape_a, info.shape_b);
+    info.m_normal = -info.m_normal;
+    std::swap(info.m_shape_a, info.m_shape_b);
     return info;
 }
 
@@ -62,33 +56,31 @@ CollisionInfo CollisionInfo::aabb_vs_circle(Shape *shape_a, Shape *shape_b) {
 
 CollisionInfo CollisionInfo::circle_vs_aabb(Shape *shape_a, Shape *shape_b) {
     auto info = check_aabb_against_circle(dynamic_cast<AABB*>(shape_b), dynamic_cast<Circle*>(shape_a));
-    info.normal = -info.normal;
+    info.m_normal = -info.m_normal;
+    std::swap(info.m_shape_a, info.m_shape_b);
     return info;
 }
 
 CollisionInfo CollisionInfo::check_circle_against_circle(Circle *circle_a, Circle *circle_b) {
     CollisionInfo result;
-    result.shape_a = circle_a;
-    result.shape_b = circle_b;
+    result.m_shape_a = circle_a;
+    result.m_shape_b = circle_b;
 
     const Vec2 dist = circle_b->get_position() - circle_a->get_position();
 
     const float distance = dist.GetMagnitude();
-    result.normal = dist.GetNormalised();
+    result.m_normal = dist.GetNormalised();
 
-    result.depth = -(distance - circle_a->get_radius() - circle_b->get_radius());
+    result.m_depth = -(distance - circle_a->get_radius() - circle_b->get_radius());
     return result;
 }
 
 CollisionInfo CollisionInfo::check_aabb_against_aabb(AABB *box_a, AABB *box_b) {
     CollisionInfo result;
-    result.shape_a = box_a;
-    result.shape_b = box_b;
+    result.m_shape_a = box_a;
+    result.m_shape_b = box_b;
 
-    const Vec2 pos_a = box_a->get_position();
-    const Vec2 pos_b = box_b->get_position();
-
-    const float dx = pos_a.x - pos_b.x;
+    const float dx = box_a->get_position().x - box_b->get_position().x;
     const float overlap_x = box_a->get_half_width() + box_b->get_half_width() - std::abs(dx);
 
     // AABB collision only happens if both x and y overlap, so exit early id no collision
@@ -96,18 +88,18 @@ CollisionInfo CollisionInfo::check_aabb_against_aabb(AABB *box_a, AABB *box_b) {
         return result;
     }
 
-    const float dy = pos_a.y - pos_b.y;
+    const float dy = box_a->get_position().y - box_b->get_position().y;
     const float overlap_y = box_a->get_half_height() + box_b->get_half_height() - std::abs(dy);
     if (overlap_y <= 0.0f) {
         return result;
     }
 
     if (overlap_x < overlap_y) {
-        result.depth = overlap_x;
-        result.normal = Vec2(dx < 0.0f ? -1.0f : 1.0f, 0.0f);
+        result.m_depth = overlap_x;
+        result.m_normal = Vec2(dx < 0.0f ? 1.0f : -1.0f, 0.0f);
     } else {
-        result.depth = overlap_y;
-        result.normal = Vec2(0.0f, dy < 0.0f ? -1.0f : 1.0f);
+        result.m_depth = overlap_y;
+        result.m_normal = Vec2(0.0f, dy < 0.0f ? 1.0f : -1.0f);
     }
 
     return result;
@@ -115,8 +107,8 @@ CollisionInfo CollisionInfo::check_aabb_against_aabb(AABB *box_a, AABB *box_b) {
 
 CollisionInfo CollisionInfo::check_aabb_against_circle(AABB *box_a, Circle *circle_b) {
     CollisionInfo result;
-    result.shape_a = box_a;
-    result.shape_b = circle_b;
+    result.m_shape_a = box_a;
+    result.m_shape_b = circle_b;
 
     const Vec2 box_pos = box_a->get_position();
     const Vec2 circle_pos = circle_b->get_position();
@@ -144,15 +136,15 @@ CollisionInfo CollisionInfo::check_aabb_against_circle(AABB *box_a, Circle *circ
         const float overlap_y = radius + box_a->get_half_height() - std::abs(distance.y);
 
         if (overlap_x < overlap_y) {
-            result.depth = overlap_x;
-            result.normal = Vec2(distance.x < 0.0f ? -1.0f : 1.0f, 0.0f);
+            result.m_depth = overlap_x;
+            result.m_normal = Vec2(distance.x < 0.0f ? -1.0f : 1.0f, 0.0f);
         } else {
-            result.depth = overlap_y;
-            result.normal = Vec2(0.0f, distance.y < 0.0f ? -1.0f : 1.0f);
+            result.m_depth = overlap_y;
+            result.m_normal = Vec2(0.0f, distance.y < 0.0f ? -1.0f : 1.0f);
         }
     } else {
-        result.depth = radius - distance_magnitude;
-        result.normal = closest_to_circle / distance_magnitude;
+        result.m_depth = radius - distance_magnitude;
+        result.m_normal = closest_to_circle / distance_magnitude;
     }
 
     return result;
@@ -161,20 +153,41 @@ CollisionInfo CollisionInfo::check_aabb_against_circle(AABB *box_a, Circle *circ
 
 CollisionInfo CollisionInfo::check_plane_against_circle(Plane *plane_a, Circle *circle_b) {
     CollisionInfo result;
-    result.shape_a = plane_a;
-    result.shape_b = circle_b;
+    result.m_shape_a = plane_a;
+    result.m_shape_b = circle_b;
 
     const float signed_distance = Dot(plane_a->get_normal(), circle_b->get_position()) - plane_a->get_distance();
     if (signed_distance > circle_b->get_radius()) {
         return result;
     }
 
-    result.depth  = circle_b->get_radius() - signed_distance;
-    result.normal = plane_a->get_normal();
+    result.m_depth  = circle_b->get_radius() - signed_distance;
+    result.m_normal = plane_a->get_normal();
 
     return result;
 }
 
-CollisionInfo CollisionInfo::check_plane_against_aabb(Plane *plane_a, AABB *box_n) {
+CollisionInfo CollisionInfo::check_plane_against_aabb(Plane *plane_a, AABB *box_b) {
+    CollisionInfo result;
+    result.m_shape_a = plane_a;
+    result.m_shape_b = box_b;
 
+    const Vec2 planeNormal = plane_a->get_normal();
+    const float planeDistance = plane_a->get_distance();
+
+    const Vec2 boxCenter = box_b->get_position();
+    const float halfWidth = box_b->get_half_width();
+    const float halfHeight = box_b->get_half_height();
+
+    const float dist = Dot(boxCenter, planeNormal) - planeDistance;
+    const float r = halfWidth  * std::abs(planeNormal.x) + halfHeight * std::abs(planeNormal.y);
+
+    if (dist > r || dist < -r) {
+        return result;
+    }
+
+    result.m_depth = r - std::abs(dist);
+    result.m_normal = dist < 0.0f ? -planeNormal : planeNormal;
+
+    return result;
 }
