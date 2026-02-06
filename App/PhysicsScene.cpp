@@ -12,6 +12,7 @@
 PhysicsScene::PhysicsScene() : m_gravity(Vec2(0, 0)), m_time_step(0.01f) {
 	appInfo.appName = "Example Program";
     appInfo.grid.extent = 100;
+    appInfo.grid.show = false;
 }
 
 PhysicsScene::~PhysicsScene() {
@@ -22,7 +23,17 @@ PhysicsScene::~PhysicsScene() {
 void PhysicsScene::Initialise() {
     set_gravity(Vec2(0, -9.81f));
 
-    // PhysicsShape* floor = new PhysicsShape(new Plane(Vec2(0.0f, 1.0f), 100, Colour::WHITE));
+    const Vec2 planePos = Vec2(0.0f, 1.0f) * -5.0f;
+    PhysicsShape* floor = new PhysicsShape(new Plane(Vec2(0.0f, 1.0f), -5.0f, Colour::GREEN), new RigidBody(planePos, Vec2(0,0), 0, 0.0f));
+    m_actors.push_back(floor);
+
+    const Vec2 planePos2 = Vec2(30.0f, 90.0f) * -5.0f;
+    PhysicsShape* floor2 = new PhysicsShape(new Plane(Vec2(30.0f, 90.0f), -5.0f, Colour::GREEN), new RigidBody(planePos2, Vec2(0, 0), 0, 0.0f));
+    m_actors.push_back(floor2);
+
+    const Vec2 planePos3 = Vec2(-30.0f, 90.0f) * -5.0f;
+    PhysicsShape* floor3 = new PhysicsShape(new Plane(Vec2(-30.0f, 90.0f), -5.0f, Colour::GREEN), new RigidBody(planePos3, Vec2(0, 0), 0, 0.0f));
+    m_actors.push_back(floor3);
 
     PhysicsShape* shape = new PhysicsShape(new Circle(cursorPos, 0.8f, Colour::WHITE), new RigidBody(cursorPos, Vec2(0.25f, 8.0f), 1.0f, 1.0f));
     m_actors.push_back(shape);

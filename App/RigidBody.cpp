@@ -5,10 +5,14 @@ RigidBody::RigidBody(const Vec2 pos, const Vec2 vel, const float orientation, co
 	m_velocity = vel;
 	m_orientation = orientation;
 	m_mass = mass;
-	m_inv_mass = 1.0f / mass;
+	mass != 0.0f ? m_inv_mass = 1.0f / mass : m_inv_mass = 0.0f;
 }
 
 void RigidBody::fixed_update(const Vec2 gravity, const float time_step) {
+	if (m_inv_mass == 0.0f) {
+		return;
+	}
+
 	apply_force(gravity * m_mass);
 
 	const Vec2 acc = m_force_accumulated * m_inv_mass;

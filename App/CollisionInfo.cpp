@@ -182,12 +182,12 @@ CollisionInfo CollisionInfo::check_plane_against_aabb(Plane *plane_a, AABB *box_
     const float dist = Dot(boxCenter, planeNormal) - planeDistance;
     const float r = halfWidth  * std::abs(planeNormal.x) + halfHeight * std::abs(planeNormal.y);
 
-    if (dist > r || dist < -r) {
+    if (dist > r) {
         return result;
     }
 
-    result.m_depth = r - std::abs(dist);
-    result.m_normal = dist < 0.0f ? -planeNormal : planeNormal;
+    result.m_depth = r - dist;
+    result.m_normal = planeNormal;
 
     return result;
 }
