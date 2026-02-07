@@ -8,6 +8,10 @@ void CollisionInfo::debug_draw(LineRenderer *lines) const {
     lines->DrawLineWithArrow(m_shape_b->get_position(), m_shape_b->get_position() + m_normal, Colour::GREEN);
 }
 
+void CollisionInfo::debug_draw_contact(LineRenderer *lines) const {
+    lines->DrawCross(m_contact, 0.1f, Colour::RED);
+}
+
 CollisionFn collision_table[SHAPE_COUNT][SHAPE_COUNT] = {
     { CollisionInfo::circle_vs_circle, CollisionInfo::circle_vs_aabb, CollisionInfo::circle_vs_plane },
     { CollisionInfo::aabb_vs_circle, CollisionInfo::aabb_vs_aabb, CollisionInfo::aabb_vs_plane },
@@ -66,12 +70,15 @@ CollisionInfo CollisionInfo::check_circle_against_circle(Circle *circle_a, Circl
     result.m_shape_a = circle_a;
     result.m_shape_b = circle_b;
 
-    const Vec2 dist = circle_b->get_position() - circle_a->get_position();
+    const Vec2 delta = circle_b->get_position() - circle_a->get_position();
+    const float dist = delta.GetMagnitude();
 
-    const float distance = dist.GetMagnitude();
-    result.m_normal = dist.GetNormalised();
+    if (dist <= 0.0001f) return result;
 
-    result.m_depth = -(distance - circle_a->get_radius() - circle_b->get_radius());
+    result.m_normal = delta / dist;
+    result.m_depth = circle_a->get_radius() + circle_b->get_radius() - dist;
+
+    result.m_contact = circle_a->get_position() + result.m_normal * (circle_a->get_radius() - result.m_depth * 0.5f);
     return result;
 }
 
@@ -97,9 +104,17 @@ CollisionInfo CollisionInfo::check_aabb_against_aabb(AABB *box_a, AABB *box_b) {
     if (overlap_x < overlap_y) {
         result.m_depth = overlap_x;
         result.m_normal = Vec2(dx < 0.0f ? 1.0f : -1.0f, 0.0f);
+        result.m_contact = {
+            box_a->get_position().x + result.m_normal.x * box_a->get_half_width(),
+            box_b->get_position().y
+        };
     } else {
         result.m_depth = overlap_y;
         result.m_normal = Vec2(0.0f, dy < 0.0f ? 1.0f : -1.0f);
+        result.m_contact = {
+            box_b->get_position().x,
+            box_a->get_position().y + result.m_normal.y * box_a->get_half_height()
+        };
     }
 
     return result;
@@ -147,6 +162,7 @@ CollisionInfo CollisionInfo::check_aabb_against_circle(AABB *box_a, Circle *circ
         result.m_normal = closest_to_circle / distance_magnitude;
     }
 
+    result.m_contact = closest_point;
     return result;
 
 }
@@ -163,6 +179,7 @@ CollisionInfo CollisionInfo::check_plane_against_circle(Plane *plane_a, Circle *
 
     result.m_depth  = circle_b->get_radius() - signed_distance;
     result.m_normal = plane_a->get_normal();
+    result.m_contact = circle_b->get_position() - plane_a->get_normal() * signed_distance;
 
     return result;
 }
@@ -186,8 +203,13 @@ CollisionInfo CollisionInfo::check_plane_against_aabb(Plane *plane_a, AABB *box_
         return result;
     }
 
+    Vec2 support = boxCenter;
+    support.x -= planeNormal.x > 0 ? halfWidth : -halfWidth;
+    support.y -= planeNormal.y > 0 ? halfHeight : -halfHeight;
+
     result.m_depth = r - dist;
     result.m_normal = planeNormal;
+    result.m_contact = support;
 
     return result;
 }

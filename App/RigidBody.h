@@ -1,6 +1,8 @@
+#ifndef LINERENDERER_RIGIDBODY_H
+#define LINERENDERER_RIGIDBODY_H
+
 #pragma once
 
-#include "PhysicsObject.h"
 #include "Maths.h"
 
 class RigidBody {
@@ -37,3 +39,5 @@ protected:
 	float m_inv_mass;
 	float m_orientation;
 };
+
+#endif //LINERENDERER_RIGIDBODY_H

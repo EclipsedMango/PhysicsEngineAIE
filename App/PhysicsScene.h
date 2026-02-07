@@ -1,7 +1,7 @@
-#pragma once
+#ifndef LINERENDERER_PHYSICSSCENE_H
+#define LINERENDERER_PHYSICSSCENE_H
 
 #include "Application.h"
-#include "PhysicsObject.h"
 #include "TextStream.h"
 #include <vector>
 
@@ -39,3 +39,5 @@ private:
 	float m_time_step;
 	std::vector<PhysicsShape*> m_actors;
 };
+
+#endif //LINERENDERER_PHYSICSSCENE_H

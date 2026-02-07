@@ -1,4 +1,6 @@
-#pragma once
+#ifndef LINERENDERER_COLLISIONINFO_H
+#define LINERENDERER_COLLISIONINFO_H
+
 #include "Vec2.h"
 #include "Shape.h"
 #include "Circle.h"
@@ -11,12 +13,14 @@ class LineRenderer;
 
 struct CollisionInfo {
     Vec2 m_normal;
+    Vec2 m_contact;
     float m_depth = -1;
     Shape* m_shape_a {};
     Shape* m_shape_b {};
 
     [[nodiscard]] bool is_collision() const { return m_depth > 0; }
     void debug_draw(LineRenderer* lines) const;
+    void debug_draw_contact(LineRenderer* lines) const;
 
     static CollisionInfo check_shape_against_shape(Shape* shape_a, Shape* shape_b);
 
@@ -40,3 +44,5 @@ struct CollisionInfo {
 };
 
 using CollisionFn = CollisionInfo(*)(Shape*, Shape*);
+
+#endif //LINERENDERER_COLLISIONINFO_H

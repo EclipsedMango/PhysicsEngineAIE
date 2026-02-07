@@ -1,3 +1,6 @@
+#ifndef LINERENDERER_CIRCLE_H
+#define LINERENDERER_CIRCLE_H
+
 #pragma once
 #include "Colour.h"
 #include "Shape.h"
@@ -5,15 +8,14 @@
 class Circle : public Shape {
 public:
 	Circle(Vec2 pos, float radius, Colour colour);
-	~Circle() override = default;
 
 	void debug_draw(LineRenderer* lines) const override;
 
 	[[nodiscard]] float get_radius() const { return m_radius; }
-	[[nodiscard]] Colour get_colour() const override { return m_colour; }
 	[[nodiscard]] ShapeType get_type() const override { return CIRCLE; }
 	
 protected:
 	float m_radius;
-	Colour m_colour;
 };
+
+#endif //LINERENDERER_CIRCLE_H

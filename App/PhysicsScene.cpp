@@ -1,11 +1,10 @@
 #include "PhysicsScene.h"
 
 #include <algorithm>
+#include <iostream>
 
 #include "Vec2.h"
 #include "imgui.h"
-#include "PhysicsObject.h"
-
 #include "CollisionInfo.h"
 #include "PhysicsShape.h"
 
@@ -16,7 +15,11 @@ PhysicsScene::PhysicsScene() : m_gravity(Vec2(0, 0)), m_time_step(0.01f) {
 }
 
 PhysicsScene::~PhysicsScene() {
+    for (const PhysicsShape* actor : m_actors) {
+        delete actor;
+    }
 
+    m_actors.clear();
 }
 
 // happens after opengl init
@@ -24,19 +27,16 @@ void PhysicsScene::Initialise() {
     set_gravity(Vec2(0, -9.81f));
 
     const Vec2 planePos = Vec2(0.0f, 1.0f) * -5.0f;
-    PhysicsShape* floor = new PhysicsShape(new Plane(Vec2(0.0f, 1.0f), -5.0f, Colour::GREEN), new RigidBody(planePos, Vec2(0,0), 0, 0.0f));
+    PhysicsShape* floor = new PhysicsShape(new Plane(Vec2(0.0f, 1.0f), -5.0f, Colour::WHITE), new RigidBody(planePos, Vec2(0,0), 0, 0.0f));
     m_actors.push_back(floor);
 
     const Vec2 planePos2 = Vec2(30.0f, 90.0f) * -5.0f;
-    PhysicsShape* floor2 = new PhysicsShape(new Plane(Vec2(30.0f, 90.0f), -5.0f, Colour::GREEN), new RigidBody(planePos2, Vec2(0, 0), 0, 0.0f));
+    PhysicsShape* floor2 = new PhysicsShape(new Plane(Vec2(30.0f, 90.0f), -5.0f, Colour::WHITE), new RigidBody(planePos2, Vec2(0, 0), 0, 0.0f));
     m_actors.push_back(floor2);
 
     const Vec2 planePos3 = Vec2(-30.0f, 90.0f) * -5.0f;
-    PhysicsShape* floor3 = new PhysicsShape(new Plane(Vec2(-30.0f, 90.0f), -5.0f, Colour::GREEN), new RigidBody(planePos3, Vec2(0, 0), 0, 0.0f));
+    PhysicsShape* floor3 = new PhysicsShape(new Plane(Vec2(-30.0f, 90.0f), -5.0f, Colour::WHITE), new RigidBody(planePos3, Vec2(0, 0), 0, 0.0f));
     m_actors.push_back(floor3);
-
-    PhysicsShape* shape = new PhysicsShape(new Circle(cursorPos, 0.8f, Colour::WHITE), new RigidBody(cursorPos, Vec2(0.25f, 8.0f), 1.0f, 1.0f));
-    m_actors.push_back(shape);
 }
 
 void PhysicsScene::Update(const float delta) {
@@ -57,10 +57,19 @@ void PhysicsScene::Update(const float delta) {
         // collision checks
         for (int outer = 0; outer < m_actors.size() - 1; outer++) {
             for (int inner = outer + 1; inner < m_actors.size(); inner++) {
-                CollisionInfo info = CollisionInfo::check_shape_against_shape(m_actors[outer]->get_shape(), m_actors[inner]->get_shape());
+                Shape* shape_a = m_actors[outer]->get_shape();
+                Shape* shape_b = m_actors[inner]->get_shape();
+
+                if (shape_a->get_type() == PLANE && shape_b->get_type() == PLANE) {
+                    continue;
+                }
+
+                CollisionInfo info = CollisionInfo::check_shape_against_shape(shape_a, shape_b);
 
                 if (info.is_collision()) {
                     resolve_collision(info);
+                    info.debug_draw_contact(lines);
+                    info.debug_draw(lines);
                 }
             }
         }
@@ -76,16 +85,12 @@ void PhysicsScene::add_actor(PhysicsShape* actor) {
 }
 
 void PhysicsScene::remove_actor(PhysicsShape* actor) {
-    const auto iterator = std::remove_if(m_actors.begin(), m_actors.end(), [actor](const PhysicsShape* a){
-            if (a == actor) {
-                delete a;
-                return true;
-            }
+    auto it = std::find(m_actors.begin(), m_actors.end(), actor);
 
-            return false;
-    });
-
-    m_actors.erase(iterator, m_actors.end());
+    if (it != m_actors.end()) {
+        delete *it;
+        m_actors.erase(it);
+    }
 }
 
 void PhysicsScene::OnLeftClick() {
@@ -151,7 +156,7 @@ void PhysicsScene::resolve_impulse(RigidBody* body_a, RigidBody* body_b, const V
         return;
     }
 
-    constexpr float restitution = 0.2f;
+    constexpr float restitution = 0.15f;
 
     const float inv_mass_a = body_a ? body_a->get_inverse_mass() : 0.0f;
     const float inv_mass_b = body_b ? body_b->get_inverse_mass() : 0.0f;
@@ -168,6 +173,26 @@ void PhysicsScene::resolve_impulse(RigidBody* body_a, RigidBody* body_b, const V
     if (body_b) {
         body_b->apply_impulse( impulse);
     }
+
+    Vec2 tangent = relative_velocity - Dot(relative_velocity, normal) * normal;
+    if (tangent.GetMagnitude() < 0.0001) {
+        return;
+    }
+
+    tangent.Normalise();
+
+    float jt = -Dot(relative_velocity, tangent);
+    jt /= inv_mass_a + inv_mass_b;
+
+    constexpr float friction_co = 0.15f;
+    const float max_friction = j * friction_co;
+
+    // Coulomb made this apparently idk
+    jt = std::clamp(jt, -max_friction, max_friction);
+    const Vec2 friction_impulse = tangent * jt;
+
+    if (body_a) body_a->apply_impulse(-friction_impulse);
+    if (body_b) body_b->apply_impulse( friction_impulse);
 }
 
 // O(n) lookup ideally replace with hashmap or something fast

@@ -1,5 +1,6 @@
 #ifndef LINERENDERER_PHYSICSSHAPE_H
 #define LINERENDERER_PHYSICSSHAPE_H
+
 #include "RigidBody.h"
 #include "Shape.h"
 #include "Vec2.h"

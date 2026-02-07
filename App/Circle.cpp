@@ -9,5 +9,5 @@ Circle::Circle(const Vec2 pos, const float radius, const Colour colour) {
 }
 
 void Circle::debug_draw(LineRenderer *lines) const {
-	lines->DrawCircle(get_position(), m_radius, m_colour);
+	lines->DrawCircle(get_position(), m_radius, get_colour());
 }

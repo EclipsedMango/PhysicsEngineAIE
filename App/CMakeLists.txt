@@ -9,7 +9,6 @@ target_sources(App PUBLIC
     "RigidBody.cpp"
 	"Circle.cpp"
 	"AABB.cpp"
-    "PhysicsObject.cpp"
 	"CollisionInfo.cpp"
 	"Shape.cpp"
 	"PhysicsShape.cpp"
