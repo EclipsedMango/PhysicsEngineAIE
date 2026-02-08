@@ -6,10 +6,11 @@
 #include "Vec2.h"
 #include "imgui.h"
 #include "CollisionInfo.h"
+#include "LineRenderer.h"
 #include "PhysicsShape.h"
 
-PhysicsScene::PhysicsScene() : m_gravity(Vec2(0, 0)), m_time_step(0.01f) {
-	appInfo.appName = "Example Program";
+PhysicsScene::PhysicsScene() : m_player(nullptr), m_gravity(Vec2(0, 0)), m_time_step(0.01f) {
+    appInfo.appName = "Example Program";
     appInfo.grid.show = false;
 }
 
@@ -29,9 +30,12 @@ void PhysicsScene::Initialise() {
     PhysicsShape* floor = new PhysicsShape(new Plane(Vec2(0.0f, 1.0f), -5.0f, Colour::WHITE), new RigidBody(planePos, Vec2(0,0), 0, 0.0f));
     m_actors.push_back(floor);
 
-    const Vec2 planePos2 = Vec2(10.0f, 90.0f) * -5.0f;
-    PhysicsShape* floor2 = new PhysicsShape(new Plane(Vec2(10.0f, 90.0f), -5.0f, Colour::WHITE), new RigidBody(planePos2, Vec2(0, 0), 0, 0.0f));
+    const Vec2 planePos2 = Vec2(30.0f, 90.0f) * -5.0f;
+    PhysicsShape* floor2 = new PhysicsShape(new Plane(Vec2(30.0f, 90.0f), -5.0f, Colour::WHITE), new RigidBody(planePos2, Vec2(0, 0), 0, 0.0f));
     m_actors.push_back(floor2);
+
+    m_player = new PhysicsShape(new Circle(Vec2(0, 10), 0.5f, Colour::CYAN.Darken()), new RigidBody(Vec2(0, 10), Vec2(0, 100), 0, 100.0f));
+    m_actors.push_back(m_player);
 
     // const Vec2 planePos3 = Vec2(-30.0f, 90.0f) * -5.0f;
     // PhysicsShape* floor3 = new PhysicsShape(new Plane(Vec2(-30.0f, 90.0f), -5.0f, Colour::WHITE), new RigidBody(planePos3, Vec2(0, 0), 0, 0.0f));
@@ -40,6 +44,8 @@ void PhysicsScene::Initialise() {
 
 void PhysicsScene::Update(const float delta) {
 	ImGui::Begin("Window");
+    ImGui::Checkbox("Debug Normals", &m_show_debug_normals);
+    ImGui::Checkbox("Debug Contacts", &m_show_debug_contacts);
 	ImGui::End();
 
 	static float accumulated_time = 0.0f;
@@ -67,8 +73,13 @@ void PhysicsScene::Update(const float delta) {
 
                 if (info.is_collision()) {
                     resolve_collision(info);
-                    info.debug_draw_contact(lines);
-                    info.debug_draw(lines);
+                    if (m_show_debug_normals) {
+                        info.debug_draw(lines);
+                    }
+
+                    if (m_show_debug_contacts) {
+                        info.debug_draw_contact(lines);
+                    }
                 }
             }
         }
@@ -183,7 +194,7 @@ void PhysicsScene::resolve_impulse(RigidBody* body_a, RigidBody* body_b, const V
     float jt = -Dot(relative_velocity, tangent);
     jt /= inv_mass_a + inv_mass_b;
 
-    constexpr float mu = 0.15f;
+    constexpr float mu = 0.2f;
     const float max_friction = j * mu;
 
     // Coulomb made this apparently idk

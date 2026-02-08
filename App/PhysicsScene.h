@@ -10,6 +10,8 @@ class Shape;
 class RigidBody;
 class CollisionInfo;
 
+struct Player;
+
 class PhysicsScene : public Application {
 public:
 	PhysicsScene();
@@ -35,9 +37,13 @@ public:
 	PhysicsShape* find_actor_from_shape(const Shape* shape) const;
 
 private:
+	PhysicsShape* m_player;
 	Vec2 m_gravity;
 	float m_time_step;
 	std::vector<PhysicsShape*> m_actors;
+
+	bool m_show_debug_normals{};
+	bool m_show_debug_contacts{};
 };
 
 #endif //LINERENDERER_PHYSICSSCENE_H
