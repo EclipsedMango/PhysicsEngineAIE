@@ -88,16 +88,6 @@ ShaderProgram::ShaderProgram(std::string vertexFilename, std::string fragmentFil
 
 }
 
-ShaderProgram::~ShaderProgram()
-{
-	if (loadedSuccessfully)
-	{
-		glDeleteShader(vertexShader);
-		glDeleteShader(fragmentShader);
-		glDeleteProgram(shaderProgram);
-	}
-}
-
 ShaderProgram::ShaderProgram(ShaderProgram&& other) noexcept
 {
 	this->shaderProgram = other.shaderProgram;
@@ -128,6 +118,15 @@ ShaderProgram& ShaderProgram::operator=(ShaderProgram&& other) noexcept
 
 	other.loadedSuccessfully = false;	//Invalidate the other shader - it's about to have its destructor called, and we need it to not call the glDelete functions.
 	return *this;
+}
+
+void ShaderProgram::Shutdown() const {
+	if (loadedSuccessfully)
+	{
+		glDeleteShader(vertexShader);
+		glDeleteShader(fragmentShader);
+		glDeleteProgram(shaderProgram);
+	}
 }
 
 void ShaderProgram::UseShader()

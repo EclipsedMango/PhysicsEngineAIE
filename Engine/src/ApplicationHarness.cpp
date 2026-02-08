@@ -112,6 +112,8 @@ ApplicationHarness::~ApplicationHarness()
 	ImGui_ImplOpenGL3_Shutdown();
 	ImGui_ImplSDL3_Shutdown();
 	ImGui::DestroyContext();
+	lines.Shutdown();
+	simpleShader.Shutdown();
 	SDL_GL_DestroyContext(glContext);
 	SDL_DestroyWindow(window);
 	SDL_Quit();

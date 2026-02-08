@@ -19,7 +19,7 @@ public:
 	ShaderProgram() {}
 	ShaderProgram(std::string vertexFilename, std::string fragmentFilename);
 
-	~ShaderProgram();
+	~ShaderProgram() = default;
 
 	//We don't want to be duplicating our shader around - that will screw us over.
 	ShaderProgram(const ShaderProgram& other) = delete;
@@ -28,6 +28,8 @@ public:
 	//Moving it around is fine though, we just have to do it properly.
 	ShaderProgram(ShaderProgram&& other) noexcept;
 	ShaderProgram& operator= (ShaderProgram&& other) noexcept;
+
+	void Shutdown() const;
 
 	bool IsLoadedSuccessfully() const { return loadedSuccessfully; }
 

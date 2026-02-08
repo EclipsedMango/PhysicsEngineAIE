@@ -10,7 +10,6 @@
 
 PhysicsScene::PhysicsScene() : m_gravity(Vec2(0, 0)), m_time_step(0.01f) {
 	appInfo.appName = "Example Program";
-    appInfo.grid.extent = 100;
     appInfo.grid.show = false;
 }
 
@@ -30,13 +29,13 @@ void PhysicsScene::Initialise() {
     PhysicsShape* floor = new PhysicsShape(new Plane(Vec2(0.0f, 1.0f), -5.0f, Colour::WHITE), new RigidBody(planePos, Vec2(0,0), 0, 0.0f));
     m_actors.push_back(floor);
 
-    const Vec2 planePos2 = Vec2(30.0f, 90.0f) * -5.0f;
-    PhysicsShape* floor2 = new PhysicsShape(new Plane(Vec2(30.0f, 90.0f), -5.0f, Colour::WHITE), new RigidBody(planePos2, Vec2(0, 0), 0, 0.0f));
+    const Vec2 planePos2 = Vec2(10.0f, 90.0f) * -5.0f;
+    PhysicsShape* floor2 = new PhysicsShape(new Plane(Vec2(10.0f, 90.0f), -5.0f, Colour::WHITE), new RigidBody(planePos2, Vec2(0, 0), 0, 0.0f));
     m_actors.push_back(floor2);
 
-    const Vec2 planePos3 = Vec2(-30.0f, 90.0f) * -5.0f;
-    PhysicsShape* floor3 = new PhysicsShape(new Plane(Vec2(-30.0f, 90.0f), -5.0f, Colour::WHITE), new RigidBody(planePos3, Vec2(0, 0), 0, 0.0f));
-    m_actors.push_back(floor3);
+    // const Vec2 planePos3 = Vec2(-30.0f, 90.0f) * -5.0f;
+    // PhysicsShape* floor3 = new PhysicsShape(new Plane(Vec2(-30.0f, 90.0f), -5.0f, Colour::WHITE), new RigidBody(planePos3, Vec2(0, 0), 0, 0.0f));
+    // m_actors.push_back(floor3);
 }
 
 void PhysicsScene::Update(const float delta) {
@@ -84,8 +83,8 @@ void PhysicsScene::add_actor(PhysicsShape* actor) {
 	m_actors.push_back(actor);
 }
 
-void PhysicsScene::remove_actor(PhysicsShape* actor) {
-    auto it = std::find(m_actors.begin(), m_actors.end(), actor);
+void PhysicsScene::remove_actor(const PhysicsShape* actor) {
+    const auto it = std::find(m_actors.begin(), m_actors.end(), actor);
 
     if (it != m_actors.end()) {
         delete *it;
@@ -98,7 +97,7 @@ void PhysicsScene::OnLeftClick() {
 }
 
 void PhysicsScene::OnRightClick() {
-    add_actor(new PhysicsShape(new AABB(cursorPos, 0.75f, 0.5f, Colour::WHITE), new RigidBody(cursorPos, Vec2(0.25f, 8.0f), 1.0f, 1.0f)));
+    add_actor(new PhysicsShape(new AABB(cursorPos, 0.75f, 0.5f, Colour::WHITE), new RigidBody(cursorPos, Vec2(0.25f, 1.0f), 1.0f, 1.0f)));
 }
 
 void PhysicsScene::resolve_collision(const CollisionInfo& info) const {
@@ -184,8 +183,8 @@ void PhysicsScene::resolve_impulse(RigidBody* body_a, RigidBody* body_b, const V
     float jt = -Dot(relative_velocity, tangent);
     jt /= inv_mass_a + inv_mass_b;
 
-    constexpr float friction_co = 0.15f;
-    const float max_friction = j * friction_co;
+    constexpr float mu = 0.15f;
+    const float max_friction = j * mu;
 
     // Coulomb made this apparently idk
     jt = std::clamp(jt, -max_friction, max_friction);

@@ -36,11 +36,12 @@ private:
 
 public:
 	LineRenderer() = default;
-	~LineRenderer();
+	~LineRenderer() = default;
 	LineRenderer(const LineRenderer&) = delete;
 	const LineRenderer& operator=(const LineRenderer&) = delete;
 
 	void Initialise();
+	void Shutdown();
 
 	void SetColour(Colour colour);
 

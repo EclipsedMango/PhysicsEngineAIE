@@ -21,7 +21,7 @@ public:
 	void Update(float delta) override;
 
 	void add_actor(PhysicsShape* actor);
-	void remove_actor(PhysicsShape* actor);
+	void remove_actor(const PhysicsShape* actor);
 
 	void set_gravity(const Vec2 gravity) { m_gravity = gravity; };
 

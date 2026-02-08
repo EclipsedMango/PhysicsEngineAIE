@@ -4,9 +4,7 @@
 #include "PhysicsScene.h"
 
 int main() {
-	PhysicsScene* scene = new PhysicsScene();
-	ApplicationHarness program(scene);
+	ApplicationHarness program(new PhysicsScene());
 	program.Run();
-	delete scene;
 	return 0;
 }

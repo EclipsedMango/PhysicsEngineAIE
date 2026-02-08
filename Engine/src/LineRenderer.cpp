@@ -7,15 +7,16 @@ void LineRenderer::Initialise()
 	glGenBuffers(1, &colourBufferID);
 	initialised = true;
 }
-LineRenderer::~LineRenderer()
-{
-	if (initialised)
-	{
+
+void LineRenderer::Shutdown() {
+	if (initialised) {
 		glDeleteBuffers(1, &positionBufferID);
 		glDeleteBuffers(1, &colourBufferID);
+		positionBufferID = 0;
+		colourBufferID = 0;
+		initialised = false;
 	}
 }
-
 
 void LineRenderer::SetColour(Colour colour)
 {
