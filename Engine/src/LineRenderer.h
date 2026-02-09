@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cfloat>
+
 #include "Maths.h"
 #include <vector>
 #include "Graphics.h"

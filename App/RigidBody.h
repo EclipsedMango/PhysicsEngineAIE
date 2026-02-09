@@ -5,9 +5,15 @@
 
 #include "Maths.h"
 
+enum BodyType {
+	DYNAMIC = 0,
+	STATIC = 1,
+	KINEMATIC = 2,
+};
+
 class RigidBody {
 public:
-	RigidBody(Vec2 pos, Vec2 vel, float orientation, float mass);
+	RigidBody(Vec2 pos, Vec2 vel, float orientation, float mass, BodyType type);
 	~RigidBody() = default;
 
 	void fixed_update(Vec2 gravity, float time_step);
@@ -34,6 +40,8 @@ protected:
 	Vec2 m_position;
 	Vec2 m_velocity;
 	Vec2 m_force_accumulated;
+
+	BodyType m_type;
 
 	float m_mass;
 	float m_inv_mass;

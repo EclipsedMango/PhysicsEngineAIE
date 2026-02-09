@@ -9,6 +9,15 @@
 #include "LineRenderer.h"
 #include "PhysicsShape.h"
 
+static ShapeType current_shape = CIRCLE;
+const char* shape_names[] = { "Circle", "Box" };
+
+static float circle_rad = 1.0f;
+static float box_half_width = 2.0f;
+static float box_half_height = 2.0f;
+static float shape_mass = 1.0f;
+static float shape_velocity[2];
+
 PhysicsScene::PhysicsScene() : m_player(nullptr), m_gravity(Vec2(0, 0)), m_time_step(0.01f) {
     appInfo.appName = "Example Program";
     appInfo.grid.show = false;
@@ -27,14 +36,14 @@ void PhysicsScene::Initialise() {
     set_gravity(Vec2(0, -9.81f));
 
     const Vec2 planePos = Vec2(0.0f, 1.0f) * -5.0f;
-    PhysicsShape* floor = new PhysicsShape(new Plane(Vec2(0.0f, 1.0f), -5.0f, Colour::WHITE), new RigidBody(planePos, Vec2(0,0), 0, 0.0f));
+    PhysicsShape* floor = new PhysicsShape(new Plane(Vec2(0.0f, 1.0f), -5.0f, Colour::WHITE), new RigidBody(planePos, Vec2(0,0), 0, 0.0f, STATIC));
     m_actors.push_back(floor);
 
     const Vec2 planePos2 = Vec2(30.0f, 90.0f) * -5.0f;
-    PhysicsShape* floor2 = new PhysicsShape(new Plane(Vec2(30.0f, 90.0f), -5.0f, Colour::WHITE), new RigidBody(planePos2, Vec2(0, 0), 0, 0.0f));
+    PhysicsShape* floor2 = new PhysicsShape(new Plane(Vec2(30.0f, 90.0f), -5.0f, Colour::WHITE), new RigidBody(planePos2, Vec2(0, 0), 0, 0.0f, STATIC));
     m_actors.push_back(floor2);
 
-    m_player = new PhysicsShape(new Circle(Vec2(0, 10), 0.5f, Colour::CYAN.Darken()), new RigidBody(Vec2(0, 10), Vec2(0, 100), 0, 100.0f));
+    m_player = new PhysicsShape(new Circle(Vec2(0, 10), 0.5f, Colour::CYAN.Darken()), new RigidBody(Vec2(0, 10), Vec2(0, 100), 0, 100.0f, KINEMATIC));
     m_actors.push_back(m_player);
 
     // const Vec2 planePos3 = Vec2(-30.0f, 90.0f) * -5.0f;
@@ -43,9 +52,36 @@ void PhysicsScene::Initialise() {
 }
 
 void PhysicsScene::Update(const float delta) {
-	ImGui::Begin("Window");
-    ImGui::Checkbox("Debug Normals", &m_show_debug_normals);
-    ImGui::Checkbox("Debug Contacts", &m_show_debug_contacts);
+	ImGui::Begin("Tools");
+    ImGui::SetWindowSize(ImVec2(250, 300));
+
+    if (ImGui::CollapsingHeader("Drawing", ImGuiTreeNodeFlags_DefaultOpen)) {
+        ImGui::Checkbox("Debug Normals", &m_show_debug_normals);
+        ImGui::Checkbox("Debug Contacts", &m_show_debug_contacts);
+    }
+
+    ImGui::Separator();
+
+    if (ImGui::CollapsingHeader("Object Creation", ImGuiTreeNodeFlags_DefaultOpen)) {
+        ImGui::Combo("Types", reinterpret_cast<int*>(&current_shape), shape_names, IM_ARRAYSIZE(shape_names));
+
+        switch (current_shape) {
+            case CIRCLE: {
+                ImGui::SliderFloat("Radius", &circle_rad, 0.1f, 10.0f);
+                break;
+            }
+            case BOX: {
+                ImGui::SliderFloat("Half Width", &box_half_width, 0.1f, 10.0f);
+                ImGui::SliderFloat("Half Height", &box_half_height, 0.1f, 10.0f);
+                break;
+            }
+            default: {}
+        }
+
+        ImGui::InputFloat("Mass", &shape_mass);
+        ImGui::InputFloat2("Velocity", shape_velocity);
+    }
+
 	ImGui::End();
 
 	static float accumulated_time = 0.0f;
@@ -104,11 +140,23 @@ void PhysicsScene::remove_actor(const PhysicsShape* actor) {
 }
 
 void PhysicsScene::OnLeftClick() {
-    add_actor(new PhysicsShape(new Circle(cursorPos, 0.8f, Colour::WHITE), new RigidBody(cursorPos, Vec2(0.25f, 8.0f), 1.0f, 1.0f)));
-}
+    Shape* shape;
+    switch (current_shape) {
+        case CIRCLE: {
+            shape = new Circle(cursorPos, circle_rad, Colour::WHITE);
+            break;
+        }
+        case BOX: {
+            shape = new AABB(cursorPos, box_half_width, box_half_height, Colour::WHITE);
+            break;
+        }
+        default: {
+            shape = new Circle(cursorPos, 1.0f, Colour::RED);
+        }
+    }
 
-void PhysicsScene::OnRightClick() {
-    add_actor(new PhysicsShape(new AABB(cursorPos, 0.75f, 0.5f, Colour::WHITE), new RigidBody(cursorPos, Vec2(0.25f, 1.0f), 1.0f, 1.0f)));
+    RigidBody* body = new RigidBody(cursorPos, Vec2(shape_velocity[0], shape_velocity[1]), 1.0f, shape_mass, DYNAMIC);
+    add_actor(new PhysicsShape(shape, body));
 }
 
 void PhysicsScene::resolve_collision(const CollisionInfo& info) const {

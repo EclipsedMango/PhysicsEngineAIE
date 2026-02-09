@@ -1,8 +1,9 @@
 #include "RigidBody.h"
 
-RigidBody::RigidBody(const Vec2 pos, const Vec2 vel, const float orientation, const float mass) {
+RigidBody::RigidBody(const Vec2 pos, const Vec2 vel, const float orientation, const float mass, const BodyType type) {
 	m_position = pos;
 	m_velocity = vel;
+	m_type = type;
 	m_orientation = orientation;
 	m_mass = mass;
 	mass != 0.0f ? m_inv_mass = 1.0f / mass : m_inv_mass = 0.0f;

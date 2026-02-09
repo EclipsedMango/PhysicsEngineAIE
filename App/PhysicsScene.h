@@ -28,7 +28,6 @@ public:
 	void set_gravity(const Vec2 gravity) { m_gravity = gravity; };
 
 	void OnLeftClick() override;
-	void OnRightClick() override;
 
 	void resolve_collision(const CollisionInfo& info) const;
 	static void resolve_penetration(RigidBody* body_a, RigidBody* body_b, const Vec2& normal, float depth);
