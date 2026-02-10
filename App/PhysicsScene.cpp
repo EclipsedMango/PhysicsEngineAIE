@@ -18,6 +18,9 @@ static float box_half_height = 2.0f;
 static float shape_mass = 1.0f;
 static float shape_velocity[2];
 
+static float vel_rad = 6.0f;
+static float world_restitution = 0.15f;
+
 PhysicsScene::PhysicsScene() : m_player(nullptr), m_gravity(Vec2(0, 0)), m_time_step(0.01f) {
     appInfo.appName = "Example Program";
     appInfo.grid.show = false;
@@ -35,25 +38,36 @@ PhysicsScene::~PhysicsScene() {
 void PhysicsScene::Initialise() {
     set_gravity(Vec2(0, -9.81f));
 
-    const Vec2 planePos = Vec2(0.0f, 1.0f) * -5.0f;
-    PhysicsShape* floor = new PhysicsShape(new Plane(Vec2(0.0f, 1.0f), -5.0f, Colour::WHITE), new RigidBody(planePos, Vec2(0,0), 0, 0.0f, STATIC));
+    const Vec2 plane_pos = Vec2(0.0f, 1.0f);
+    Plane* plane = new Plane(plane_pos, -10.0f, Colour::WHITE);
+    PhysicsShape* floor = new PhysicsShape(plane, new RigidBody(plane_pos * -10.0f, Vec2(0.0,0.0f), 0.0f, 0.0f, STATIC));
     m_actors.push_back(floor);
 
-    const Vec2 planePos2 = Vec2(30.0f, 90.0f) * -5.0f;
-    PhysicsShape* floor2 = new PhysicsShape(new Plane(Vec2(30.0f, 90.0f), -5.0f, Colour::WHITE), new RigidBody(planePos2, Vec2(0, 0), 0, 0.0f, STATIC));
-    m_actors.push_back(floor2);
+    const Vec2 plane_pos_2 = Vec2(1.0f, 0.0f);
+    Plane* plane_2 = new Plane(plane_pos_2, -10.0f, Colour::WHITE);
+    PhysicsShape* wall = new PhysicsShape(plane_2, new RigidBody(plane_pos_2 * -10.0f, Vec2(0.0f, 0.0f), 0.0f, 0.0f, STATIC));
+    m_actors.push_back(wall);
 
-    m_player = new PhysicsShape(new Circle(Vec2(0, 10), 0.5f, Colour::CYAN.Darken()), new RigidBody(Vec2(0, 10), Vec2(0, 100), 0, 100.0f, KINEMATIC));
+    const Vec2 plane_pos_3 = Vec2(-1.0f, 0.0f);
+    Plane* plane_3 = new Plane(plane_pos_3, -10.0f, Colour::WHITE);
+    PhysicsShape* wall_2 = new PhysicsShape(plane_3, new RigidBody(plane_pos_3 * -10.0f, Vec2(0.0f, 0.0f), 0.0f, 0.0f, STATIC));
+    m_actors.push_back(wall_2);
+
+    const Vec2 plane_pos_4 = Vec2(0.0f, -1.0f);
+    Plane* plane_4 = new Plane(plane_pos_4, -10.0f, Colour::WHITE);
+    PhysicsShape* floor_2 = new PhysicsShape(plane_4, new RigidBody(plane_pos_4 * -10.0f, Vec2(0.0f, 0.0f), 0.0f, 0.0f, STATIC));
+    m_actors.push_back(floor_2);
+
+    m_player = new PhysicsShape(new Circle(Vec2(0, 10), 0.5f, Colour::CYAN.Darken()), new RigidBody(Vec2(0, 10), Vec2(0, 100), 0, 5.0f, KINEMATIC));
     m_actors.push_back(m_player);
-
-    // const Vec2 planePos3 = Vec2(-30.0f, 90.0f) * -5.0f;
-    // PhysicsShape* floor3 = new PhysicsShape(new Plane(Vec2(-30.0f, 90.0f), -5.0f, Colour::WHITE), new RigidBody(planePos3, Vec2(0, 0), 0, 0.0f));
-    // m_actors.push_back(floor3);
 }
 
 void PhysicsScene::Update(const float delta) {
 	ImGui::Begin("Tools");
-    ImGui::SetWindowSize(ImVec2(250, 300));
+    ImGui::SetWindowSize(ImVec2(300, 450));
+    ImGui::Text("Left click to move the player");
+    ImGui::Text("Right click to spawn a rigid body");
+    ImGui::Separator();
 
     if (ImGui::CollapsingHeader("Drawing", ImGuiTreeNodeFlags_DefaultOpen)) {
         ImGui::Checkbox("Debug Normals", &m_show_debug_normals);
@@ -80,6 +94,20 @@ void PhysicsScene::Update(const float delta) {
 
         ImGui::InputFloat("Mass", &shape_mass);
         ImGui::InputFloat2("Velocity", shape_velocity);
+    }
+
+    ImGui::Separator();
+
+    if (ImGui::CollapsingHeader("Player Settings", ImGuiTreeNodeFlags_DefaultOpen)) {
+        ImGui::Text("Player Velocity: %.2f, %.2f", m_player->get_rigid_body()->get_velocity().x, m_player->get_rigid_body()->get_velocity().y);
+        ImGui::Checkbox("Debug Max Velocity", &m_show_player_velocity_range);
+        ImGui::Checkbox("Show Player Velocity", &m_show_player_velocity);
+    }
+
+    ImGui::Separator();
+
+    if (ImGui::CollapsingHeader("World Settings", ImGuiTreeNodeFlags_DefaultOpen)) {
+        ImGui::SliderFloat("Restitution", &world_restitution, -1.5f, 1.5);
     }
 
 	ImGui::End();
@@ -124,6 +152,15 @@ void PhysicsScene::Update(const float delta) {
     for (const auto actor : m_actors) {
         actor->get_shape()->debug_draw(lines);
     }
+
+    if (m_show_player_velocity_range) {
+        lines->DrawCircle(m_player->get_position(), vel_rad, Colour::GREEN);
+    }
+
+    if (m_show_player_velocity) {
+        const Vec2 end = m_player->get_position() + m_player->get_rigid_body()->get_velocity().GetNormalised();
+        lines->DrawLineWithArrow(m_player->get_position(), end, Colour::CYAN.Lighten());
+    }
 }
 
 void PhysicsScene::add_actor(PhysicsShape* actor) {
@@ -140,6 +177,15 @@ void PhysicsScene::remove_actor(const PhysicsShape* actor) {
 }
 
 void PhysicsScene::OnLeftClick() {
+}
+
+void PhysicsScene::OnLeftRelease() {
+    Vec2 dist = cursorPos - m_player->get_position();
+    dist.GetMagnitude() > vel_rad ? dist = dist.GetNormalised() * vel_rad : dist;
+    m_player->get_rigid_body()->set_velocity(dist * 5);
+}
+
+void PhysicsScene::OnRightClick() {
     Shape* shape;
     switch (current_shape) {
         case CIRCLE: {
@@ -214,7 +260,7 @@ void PhysicsScene::resolve_impulse(RigidBody* body_a, RigidBody* body_b, const V
         return;
     }
 
-    constexpr float restitution = 0.15f;
+    const float restitution = world_restitution;
 
     const float inv_mass_a = body_a ? body_a->get_inverse_mass() : 0.0f;
     const float inv_mass_b = body_b ? body_b->get_inverse_mass() : 0.0f;

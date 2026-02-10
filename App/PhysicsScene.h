@@ -28,6 +28,8 @@ public:
 	void set_gravity(const Vec2 gravity) { m_gravity = gravity; };
 
 	void OnLeftClick() override;
+	void OnLeftRelease() override;
+	void OnRightClick() override;
 
 	void resolve_collision(const CollisionInfo& info) const;
 	static void resolve_penetration(RigidBody* body_a, RigidBody* body_b, const Vec2& normal, float depth);
@@ -43,6 +45,8 @@ private:
 
 	bool m_show_debug_normals{};
 	bool m_show_debug_contacts{};
+	bool m_show_player_velocity_range{};
+	bool m_show_player_velocity{};
 };
 
 #endif //LINERENDERER_PHYSICSSCENE_H
