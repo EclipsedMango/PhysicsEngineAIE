@@ -20,6 +20,7 @@ static float shape_velocity[2];
 
 static float vel_rad = 6.0f;
 static float world_restitution = 0.15f;
+static float friction = 0.2f;
 
 PhysicsScene::PhysicsScene() : m_player(nullptr), m_gravity(Vec2(0, 0)), m_time_step(0.01f) {
     appInfo.appName = "Example Program";
@@ -108,6 +109,8 @@ void PhysicsScene::Update(const float delta) {
 
     if (ImGui::CollapsingHeader("World Settings", ImGuiTreeNodeFlags_DefaultOpen)) {
         ImGui::SliderFloat("Restitution", &world_restitution, -1.5f, 1.5);
+        ImGui::SliderFloat("Friction", &friction, 0.0f, 1.0f);
+        ImGui::SliderFloat("Gravity", &m_gravity.y, -10.0f, 10.0f);
     }
 
 	ImGui::End();
@@ -288,10 +291,10 @@ void PhysicsScene::resolve_impulse(RigidBody* body_a, RigidBody* body_b, const V
     float jt = -Dot(relative_velocity, tangent);
     jt /= inv_mass_a + inv_mass_b;
 
-    constexpr float mu = 0.2f;
+    const float mu = friction;
     const float max_friction = j * mu;
 
-    // Coulomb made this apparently idk
+    // idk who Coulomb is never met him, but he made this
     jt = std::clamp(jt, -max_friction, max_friction);
     const Vec2 friction_impulse = tangent * jt;
 

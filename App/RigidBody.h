@@ -30,21 +30,34 @@ public:
 	[[nodiscard]] Vec2 get_velocity() const { return m_velocity; }
 	void set_velocity(const Vec2 velocity) { m_velocity = velocity; }
 
+	[[nodiscard]] Vec2 get_center_of_mass() const { return m_center_of_mass; }
+	void set_center_of_mass(const Vec2 cm) { m_center_of_mass = cm; }
+
 	[[nodiscard]] float get_mass() const { return m_mass; }
 	void set_mass(const float mass) { m_mass = mass; }
 
+	[[nodiscard]] float get_moment_of_inertia() const { return m_moi; }
+	void set_moment_of_inertia(const float moi) { m_moi = moi; }
+
 	[[nodiscard]] float get_inverse_mass() const { return m_inv_mass; }
+	[[nodiscard]] float get_inverse_moi() const { return m_inv_moi; }
 
 	void reset_position();
 protected:
 	Vec2 m_position;
 	Vec2 m_velocity;
+	Vec2 m_center_of_mass;
+
 	Vec2 m_force_accumulated;
+	Vec2 m_torque_accumulated;
 
 	BodyType m_type;
 
 	float m_mass;
 	float m_inv_mass;
+	float m_moi;
+	float m_inv_moi;
+
 	float m_orientation;
 };
 
